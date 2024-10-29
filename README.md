@@ -6,4 +6,7 @@ with the [NAU7802](https://www.nuvoton.com/resource-files/NAU7802%20Data%20Sheet
 similar to the [HX711](https://www.digikey.com/htmldatasheets/production/1836471/0/0/1/hx711.html),
 and usually used for working with load cells.
 
+This is present in the [Component Registry](https://components.espressif.com/)
+as [dankamongmen/nau7802](https://components.espressif.com/components/dankamongmen/nau7802).
+
 [![Component Registry](https://components.espressif.com/components/dankamongmen/nau7802/badge.svg)](https://components.espressif.com/components/dankamongmen/nau7802)
