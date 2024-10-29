@@ -4,7 +4,7 @@
 
 static const char* TAG = "nau";
 
-//Bits within the PU_CTRL register
+// Bits within the PU_CTRL register
 typedef enum {
   NAU7802_PU_CTRL_RR = 1,
   NAU7802_PU_CTRL_PUD = 2,
@@ -44,7 +44,7 @@ typedef enum {
   NAU7802_PGA = 0x1B,
   NAU7802_PGA_PWR = 0x1C,
   NAU7802_DEVICE_REV = 0x1F,
-} Scale_Registers;
+} registers;
 
 #define NAU7802_ADDRESS 0x2A
 
@@ -93,7 +93,7 @@ int nau7802_reset(i2c_master_dev_handle_t i2c){
 
 // get the single byte of the PU_CTRL register
 static inline int
-nau7802_readreg(i2c_master_dev_handle_t i2c, Scale_Registers reg,
+nau7802_readreg(i2c_master_dev_handle_t i2c, registers reg,
                 const char* regname, uint8_t* val){
   uint8_t r = reg;
   esp_err_t e;
@@ -142,7 +142,7 @@ nau7802_internal_calibrate(i2c_master_dev_handle_t i2c){
   }while(r & 0x4);
   bool failed = (r & 0x8);
   ESP_LOGI(TAG, "completed internal offset calibration with%s error", failed ? "" : "out");
-  return 0;
+  return failed ? -1 : 0;
 }
 
 // the power on sequence is:
