@@ -91,7 +91,7 @@ int nau7802_reset(i2c_master_dev_handle_t i2c){
   return 0;
 }
 
-// get the single byte of the PU_CTRL register
+// get the single byte of some register
 static inline int
 nau7802_readreg(i2c_master_dev_handle_t i2c, registers reg,
                 const char* regname, uint8_t* val){
@@ -154,6 +154,9 @@ nau7802_internal_calibrate(i2c_master_dev_handle_t i2c){
 //  * clear 0x40 in PGA (LDOMODE)
 //  * set 0x80 in PWR_CTRL (PGA_CAP_EN)
 //  * run an internal offset calibration (CALS/CALMOD)
+//
+// we ought also "wait through six cycles of data conversion" (1.14),
+// but are not yet doing so.
 int nau7802_poweron(i2c_master_dev_handle_t i2c){
   uint8_t buf[] = {
     NAU7802_PU_CTRL,
