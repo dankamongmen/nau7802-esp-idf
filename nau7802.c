@@ -327,7 +327,7 @@ int nau7802_read(i2c_master_dev_handle_t i2c, uint32_t* val){
   if(nau7802_readreg(i2c, NAU7802_ADCO_B0, "ADCO_B0", &r0)){
     return -1;
   }
-  *val = (r0 << 16u) + (r1 << 8u) + r2;
+  *val = (r2 << 16u) + (r1 << 8u) + r0;
   ESP_LOGD(TAG, "ADC reads: %u %u %u full %lu", r0, r1, r2, *val);
   return 0;
 }
