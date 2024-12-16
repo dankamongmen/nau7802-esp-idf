@@ -297,7 +297,7 @@ int nau7802_setldo(i2c_master_dev_handle_t i2c, nau7802_ldo_mode mode){
 }
 
 int nau7802_read_scaled(i2c_master_dev_handle_t i2c, float* val, uint32_t scale){
-  uint32_t v;
+  int32_t v;
   if(nau7802_read(i2c, &v)){
     return -1;
   }
@@ -308,7 +308,7 @@ int nau7802_read_scaled(i2c_master_dev_handle_t i2c, float* val, uint32_t scale)
   return 0;
 }
 
-int nau7802_read(i2c_master_dev_handle_t i2c, uint32_t* val){
+int nau7802_read(i2c_master_dev_handle_t i2c, int32_t* val){
   uint8_t r0, r1, r2;
   if(nau7802_pu_ctrl(i2c, &r0)){
     return -1;
@@ -327,7 +327,14 @@ int nau7802_read(i2c_master_dev_handle_t i2c, uint32_t* val){
   if(nau7802_readreg(i2c, NAU7802_ADCO_B0, "ADCO_B0", &r0)){
     return -1;
   }
-  *val = (r0 << 16u) + (r1 << 8u) + r2;
+  *val = (r2 << 16u) + (r1 << 8u) + r0;
+
+  // if the sign bit is set in the 24-bit output then
+  // propagate it to the 32-bit return value
+  if (*val & 0x800000) {
+    *val |= 0xFF000000;
+  }
+
   ESP_LOGD(TAG, "ADC reads: %u %u %u full %lu", r0, r1, r2, *val);
   return 0;
 }

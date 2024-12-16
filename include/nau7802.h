@@ -39,7 +39,7 @@ int nau7802_setldo(i2c_master_dev_handle_t i2c, nau7802_ldo_mode mode);
 
 // read the 24-bit ADC into val. returns non-zero on error, in which case
 // *val is undefined. this is the raw ADC value.
-int nau7802_read(i2c_master_dev_handle_t i2c, uint32_t* val);
+int nau7802_read(i2c_master_dev_handle_t i2c, int32_t* val);
 
 // read the 24-bit ADC, interpreting it using some maximum value scale.
 // i.e. if scale is 5000 (representing e.g. a small bar load cell of 5kg),
