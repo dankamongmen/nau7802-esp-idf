@@ -47,6 +47,4 @@ int nau7802_read(i2c_master_dev_handle_t i2c, int32_t* val);
 // on success, val will hold some value less than scale.
 int nau7802_read_scaled(i2c_master_dev_handle_t i2c, float* val, uint32_t scale);
 
-#define TIMEOUT_MS 1000 // FIXME why 1s?
-
 #endif

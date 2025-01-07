@@ -2,6 +2,8 @@
 #include <esp_log.h>
 #include <freertos/FreeRTOS.h>
 
+#define TIMEOUT_MS 1000 // FIXME why 1s?
+
 static const char* TAG = "nau";
 
 // Bits within the PU_CTRL register
