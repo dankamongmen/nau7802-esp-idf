@@ -153,8 +153,6 @@ nau7802_internal_calibrate(i2c_master_dev_handle_t i2c){
 //  * check for PUR bit in PU_CTRL after short delay
 //  * set CS in PU_CTRL
 //  * set 0x30 in ADC_CTRL (REG_CHPS)
-//  * clear 0x40 in PGA (LDOMODE)
-//  * set 0x80 in PWR_CTRL (PGA_CAP_EN)
 //  * run an internal offset calibration (CALS/CALMOD)
 //
 // we ought also "wait through six cycles of data conversion" (1.14),
@@ -191,25 +189,6 @@ int nau7802_poweron(i2c_master_dev_handle_t i2c){
   if(nau7802_xmit(i2c, buf, sizeof(buf))){
     return -1;
   }
-  buf[0] = NAU7802_PGA_PWR;
-  if(nau7802_readreg(i2c, buf[0], "PWR_CTRL", &buf[1])){
-    return -1;
-  }
-  buf[1] |= 0x80; // set 0x80 PGA_CAP_EN
-  if(nau7802_xmit(i2c, buf, sizeof(buf))){
-    return -1;
-  }
-  buf[0] = NAU7802_PGA;
-  if(nau7802_readreg(i2c, buf[0], "PGA", &buf[1])){
-    return -1;
-  }
-  buf[1] &= 0xbf; // clear 0x40 LDOMODE
-  if(nau7802_xmit(i2c, buf, sizeof(buf))){
-    return -1;
-  }
-  if(nau7802_internal_calibrate(i2c)){
-    return -1;
-  }
   buf[0] = NAU7802_DEVICE_REV;
   e = i2c_master_transmit_receive(i2c, buf, 1, &rbuf, 1, TIMEOUT_MS);
   if(e != ESP_OK){
@@ -217,10 +196,37 @@ int nau7802_poweron(i2c_master_dev_handle_t i2c){
     return -1;
   }
   ESP_LOGI(TAG, "device revision code: 0x0%x", rbuf & 0xf);
+  if(nau7802_internal_calibrate(i2c)){
+    return -1;
+  }
+  return 0;
+}
+
+int nau7802_set_pga_cap(i2c_master_dev_handle_t i2c, bool enabled){
+  uint8_t buf[] = {
+    NAU7802_PGA_PWR,
+    0x0
+  };
+  if(nau7802_readreg(i2c, buf[0], "PWR_CTRL", &buf[1])){
+    return -1;
+  }
+  if(enabled){
+    buf[1] |= 0x80; // set 0x80 PGA_CAP_EN
+  }else{
+    buf[1] &= 0x7f; // clear 0x80 PGA_CAP_EN
+  }
+  if(nau7802_xmit(i2c, buf, sizeof(buf))){
+    return -1;
+  }
+  ESP_LOGI(TAG, "set pga cap bit");
+  if(nau7802_internal_calibrate(i2c)){
+    return -1;
+  }
   return 0;
 }
 
 int nau7802_setgain(i2c_master_dev_handle_t i2c, unsigned gain){
+  uint8_t rbuf;
   if(gain > 128 || gain == 0 || (gain & (gain - 1))){
     ESP_LOGE(TAG, "illegal gain value %u", gain);
     return -1;
@@ -229,11 +235,10 @@ int nau7802_setgain(i2c_master_dev_handle_t i2c, unsigned gain){
     NAU7802_CTRL1,
     0xff
   };
-  uint8_t rbuf;
-  if(nau7802_ctrl1(i2c, &rbuf)){
+  if(nau7802_ctrl1(i2c, &buf[1])){
     return -1;
   }
-  buf[1] = rbuf & 0xf8;
+  buf[1] = buf[1] & 0xf8;
   if(gain >= 16){
     buf[1] |= 0x4;
   }
@@ -252,24 +257,54 @@ int nau7802_setgain(i2c_master_dev_handle_t i2c, unsigned gain){
     ESP_LOGE(TAG, "CTRL1 reply 0x%02x didn't match 0x%02x", rbuf, buf[1]);
     return -1;
   }
-  ESP_LOGD(TAG, "set gain");
+  ESP_LOGI(TAG, "set gain");
+  if(nau7802_internal_calibrate(i2c)){
+    return -1;
+  }
   return 0;
 }
 
-int nau7802_setldo(i2c_master_dev_handle_t i2c, nau7802_ldo_mode mode){
+int nau7802_disable_ldo(i2c_master_dev_handle_t i2c){
+  uint8_t buf[] = {
+    NAU7802_PU_CTRL,
+    0xff
+  };
+  uint8_t rbuf;
+  if(nau7802_readreg(i2c, buf[0], "PGA", &rbuf)){
+    return -1;
+  }
+  buf[1] = rbuf & 0x7f;
+  esp_err_t e;
+  if((e = i2c_master_transmit_receive(i2c, buf, sizeof(buf), &rbuf, 1, TIMEOUT_MS)) != ESP_OK){
+    ESP_LOGE(TAG, "error (%s) requesting data via I2C", esp_err_to_name(e));
+    return -1;
+  }
+  if(rbuf != buf[1]){
+    ESP_LOGE(TAG, "PGA reply 0x%02x didn't match 0x%02x", rbuf, buf[1]);
+    return -1;
+  }
+  ESP_LOGI(TAG, "disabled internal ldo");
+  if(nau7802_internal_calibrate(i2c)){
+    return -1;
+  }
+  return 0;
+}
+
+int nau7802_enable_ldo(i2c_master_dev_handle_t i2c, nau7802_ldo_level mode,
+                       bool pga_ldomode){
   if(mode < NAU7802_LDO_24V || mode > NAU7802_LDO_45V){
     ESP_LOGW(TAG, "illegal LDO mode %d", mode);
     return -1;
   }
   uint8_t buf[] = {
-    NAU7802_CTRL1,
+    NAU7802_CTRL1, // we need first set the LDO voltage in CTRL1 (VLDO)
     0xff
   };
   uint8_t rbuf;
   if(nau7802_ctrl1(i2c, &rbuf)){
     return -1;
   }
-  buf[1] = rbuf & 0xc7;
+  buf[1] = rbuf & 0xc7; // VLDO is bits 5, 4, and 3
   buf[1] |= mode << 3u;
   esp_err_t e = i2c_master_transmit_receive(i2c, buf, 2, &rbuf, 1, TIMEOUT_MS);
   if(e != ESP_OK){
@@ -280,9 +315,20 @@ int nau7802_setldo(i2c_master_dev_handle_t i2c, nau7802_ldo_mode mode){
     ESP_LOGE(TAG, "CTRL1 reply 0x%02x didn't match 0x%02x", rbuf, buf[1]);
     return -1;
   }
-  buf[0] = NAU7802_PU_CTRL;
-  if((e = i2c_master_transmit_receive(i2c, buf, 1, &rbuf, 1, TIMEOUT_MS)) != ESP_OK){
-    ESP_LOGE(TAG, "error (%s) requesting data via I2C", esp_err_to_name(e));
+  buf[0] = NAU7802_PGA; // now we configure the LDOMODE in PGA
+  if(nau7802_readreg(i2c, buf[0], "PGA", &rbuf)){
+    return -1;
+  }
+  if(pga_ldomode){
+    buf[1] |= 0x40; // set 0x40 LDOMODE
+  }else{
+    buf[1] &= 0xbf; // clear 0x40 LDOMODE
+  }
+  if(nau7802_xmit(i2c, buf, sizeof(buf))){
+    return -1;
+  }
+  buf[0] = NAU7802_PU_CTRL; // now enable the LDO
+  if(nau7802_readreg(i2c, buf[0], "PU_CTRL", &rbuf)){
     return -1;
   }
   buf[1] = rbuf | 0x80;
@@ -294,7 +340,10 @@ int nau7802_setldo(i2c_master_dev_handle_t i2c, nau7802_ldo_mode mode){
     ESP_LOGE(TAG, "PU_CTRL reply 0x%02x didn't match 0x%02x", rbuf, buf[1]);
     return -1;
   }
-  ESP_LOGD(TAG, "set ldo");
+  ESP_LOGI(TAG, "enabled internal ldo");
+  if(nau7802_internal_calibrate(i2c)){
+    return -1;
+  }
   return 0;
 }
 
