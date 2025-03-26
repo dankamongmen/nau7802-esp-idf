@@ -54,7 +54,7 @@ int nau7802_detect(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cnau)
   const unsigned addr = NAU7802_ADDRESS;
   esp_err_t e = i2c_master_probe(i2c, addr, TIMEOUT_MS);
   if(e != ESP_OK){
-    ESP_LOGE(TAG, "error %d detecting NAU7802 at 0x%02x", e, addr);
+    ESP_LOGE(TAG, "error (%s) detecting NAU7802 at 0x%02x", esp_err_to_name(e), addr);
     return -1;
   }
   i2c_device_config_t devcfg = {
@@ -64,7 +64,7 @@ int nau7802_detect(i2c_master_bus_handle_t i2c, i2c_master_dev_handle_t* i2cnau)
 	};
   ESP_LOGI(TAG, "successfully detected NAU7802 at 0x%02x", addr);
   if((e = i2c_master_bus_add_device(i2c, &devcfg, i2cnau)) != ESP_OK){
-    ESP_LOGE(TAG, "error %d adding nau7802 i2c device", e);
+    ESP_LOGE(TAG, "error (%s) adding nau7802 i2c device", esp_err_to_name(e));
     return -1;
   }
   return 0;
@@ -75,7 +75,7 @@ static int
 nau7802_xmit(i2c_master_dev_handle_t i2c, const void* buf, size_t blen){
   esp_err_t e = i2c_master_transmit(i2c, buf, blen, TIMEOUT_MS);
   if(e != ESP_OK){
-    ESP_LOGE(TAG, "error %d transmitting %zuB via I2C", e, blen);
+    ESP_LOGE(TAG, "error (%s) transmitting %zuB via I2C", esp_err_to_name(e), blen);
     return -1;
   }
   return 0;
