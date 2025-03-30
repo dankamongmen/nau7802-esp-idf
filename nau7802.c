@@ -292,7 +292,7 @@ int nau7802_disable_ldo(i2c_master_dev_handle_t i2c){
 
 int nau7802_enable_ldo(i2c_master_dev_handle_t i2c, nau7802_ldo_level mode,
                        bool pga_ldomode){
-  if(mode < NAU7802_LDO_24V || mode > NAU7802_LDO_45V){
+  if(mode > NAU7802_LDO_24V || mode < NAU7802_LDO_45V){
     ESP_LOGW(TAG, "illegal LDO mode %d", mode);
     return -1;
   }
