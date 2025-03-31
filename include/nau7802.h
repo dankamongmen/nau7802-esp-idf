@@ -87,4 +87,10 @@ int nau7802_read(i2c_master_dev_handle_t i2c, int32_t* val);
 // on success, val will hold some value less than scale.
 int nau7802_read_scaled(i2c_master_dev_handle_t i2c, float* val, uint32_t scale);
 
+// the device can be put into an extreme powered-down mode, which shuts
+// down the entire analog portion of the part. it must be brought out of
+// this mode before reads can be performed again. pass true to enter
+// the powered down state, or false to leave it.
+int nau7802_set_deepsleep(bool powerdown);
+
 #endif

@@ -389,3 +389,34 @@ int nau7802_read(i2c_master_dev_handle_t i2c, int32_t* val){
   ESP_LOGD(TAG, "ADC reads: %u %u %u full %lu", r0, r1, r2, *val);
   return 0;
 }
+
+int nau7802_set_deepsleep(i2c_master_dev_handle_t i2c, bool powerdown){
+  uint8_t buf[] = {
+    NAU7802_PU_CTRL,
+    0xff
+  };
+  if(nau7802_pu_ctrl(i2c, &buf[1])){
+    return -1;
+  }
+  const uint8_t mask = (NAU7802_PU_CTRL_PUD | NAU7802_PU_CTRL_PUA);
+  if(powerdown){
+    if(buf[1] & mask){
+      buf[1] &= mask;
+      if(nau7802_xmit(i2c, buf, sizeof(buf))){
+        return -1;
+      }
+    }else{
+      ESP_LOGE(TAG, "analog is already powered down");
+    }
+  }else{
+    if((buf[1] & mask) != mask){
+      buf[1] |= (NAU7802_PU_CTRL_PUD | NAU7802_PU_CTRL_PUA);
+      if(nau7802_xmit(i2c, buf, sizeof(buf))){
+        return -1;
+      }
+    }else{
+      ESP_LOGE(TAG, "analog is already powered up");
+    }
+  }
+  return 0;
+}
