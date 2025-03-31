@@ -20,7 +20,7 @@ int nau7802_reset(i2c_master_dev_handle_t i2c);
 //
 //  nau7802_enable_ldo() if you wish to use the internal LDO instead
 //   of the value read on AVDD.
-//  nau7802_set_gain()
+//  nau7802_set_gain().
 //
 int nau7802_poweron(i2c_master_dev_handle_t i2c);
 
@@ -66,15 +66,14 @@ typedef enum {
 // a capacitor with subohm ESR ought be used, for higher DC gain / improved
 // accuracy. instead, a capacitor with less than 5Ω ESR can be used, with
 // improved stability / lower DC gain. indicate the second case with this
-// function. this is only relevant if the internal LDO is being used for AVDD.
-// triggers an internal calibration.
+// function. triggers an internal calibration.
 int nau7802_enable_ldo(i2c_master_dev_handle_t i2c, nau7802_ldo_level level,
                        bool pga_ldomode);
 
-//  manage PGA_CAP_EN bit (0x80) in PWR_CTRL. in single-channel applications,
-//  a capacitor can connect Vin2P and Vin2N for greater ENOB (the capacitance
-//  is a function of AVDD; 330pF is recommended for 3.3V). if such a capacitor
-//  is present, enable it with this function. triggers an internal calibration.
+// manage PGA_CAP_EN bit (0x80) in PWR_CTRL. in single-channel applications,
+// a capacitor can connect Vin2P and Vin2N for greater ENOB (the capacitance
+// is a function of AVDD; 330pF is recommended for 3.3V). if such a capacitor
+// is present, enable it with this function. triggers an internal calibration.
 int nau7802_set_pga_cap(i2c_master_dev_handle_t i2c, bool enabled);
 
 // read the 24-bit ADC into val. returns non-zero on error, in which case

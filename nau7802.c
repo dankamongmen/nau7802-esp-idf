@@ -283,6 +283,14 @@ int nau7802_disable_ldo(i2c_master_dev_handle_t i2c){
     ESP_LOGE(TAG, "PGA reply 0x%02x didn't match 0x%02x", rbuf, buf[1]);
     return -1;
   }
+  if(nau7802_pu_ctrl(i2c, &buf[1])){
+    return -1;
+  }
+  buf[0] = NAU7802_PU_CTRL;
+  buf[1] &= ~NAU7802_PU_CTRL_AVDDS; // clear AVDDS
+  if(nau7802_xmit(i2c, buf, sizeof(buf))){
+    return -1;
+  }
   ESP_LOGI(TAG, "disabled internal ldo");
   if(nau7802_internal_calibrate(i2c)){
     return -1;
@@ -331,7 +339,7 @@ int nau7802_enable_ldo(i2c_master_dev_handle_t i2c, nau7802_ldo_level mode,
   if(nau7802_readreg(i2c, buf[0], "PU_CTRL", &rbuf)){
     return -1;
   }
-  buf[1] = rbuf | 0x80;
+  buf[1] = rbuf | NAU7802_PU_CTRL_AVDDS;
   if((e = i2c_master_transmit_receive(i2c, buf, sizeof(buf), &rbuf, 1, TIMEOUT_MS)) != ESP_OK){
     ESP_LOGE(TAG, "error (%s) requesting data via I2C", esp_err_to_name(e));
     return -1;
@@ -401,7 +409,7 @@ int nau7802_set_deepsleep(i2c_master_dev_handle_t i2c, bool powerdown){
   const uint8_t mask = (NAU7802_PU_CTRL_PUD | NAU7802_PU_CTRL_PUA);
   if(powerdown){
     if(buf[1] & mask){
-      buf[1] &= mask;
+      buf[1] &= ~mask;
       if(nau7802_xmit(i2c, buf, sizeof(buf))){
         return -1;
       }
