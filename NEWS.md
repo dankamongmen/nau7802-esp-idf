@@ -1,3 +1,7 @@
+* 0.2.2 (2025-03-30)
+  * always enable internal LDO in `nau7802_enable_ldo()`,
+    and always enable AVDD pin input in `nau7802_disable_ldo()`.
+
 * 0.2.1 (2025-03-30)
   * corrected register reference in `nau7802_disable_ldo()`
     that led to undefined behavior.
