@@ -266,7 +266,7 @@ int nau7802_setgain(i2c_master_dev_handle_t i2c, unsigned gain){
 
 int nau7802_disable_ldo(i2c_master_dev_handle_t i2c){
   uint8_t buf[] = {
-    NAU7802_PU_CTRL,
+    NAU7802_PGA,
     0xff
   };
   uint8_t rbuf;
@@ -405,12 +405,14 @@ int nau7802_set_deepsleep(i2c_master_dev_handle_t i2c, bool powerdown){
       if(nau7802_xmit(i2c, buf, sizeof(buf))){
         return -1;
       }
+      // we ought also "wait through six cycles of data conversion" (1.14), but
+      // are not yet doing so.
     }else{
       ESP_LOGE(TAG, "analog is already powered down");
     }
   }else{
     if((buf[1] & mask) != mask){
-      buf[1] |= (NAU7802_PU_CTRL_PUD | NAU7802_PU_CTRL_PUA);
+      buf[1] |= mask;
       if(nau7802_xmit(i2c, buf, sizeof(buf))){
         return -1;
       }
