@@ -202,6 +202,27 @@ int nau7802_poweron(i2c_master_dev_handle_t i2c){
   return 0;
 }
 
+int nau7802_set_bandgap_chop(i2c_master_dev_handle_t i2c, bool enabled){
+  uint8_t buf[] = {
+    NAU7802_I2C_CONTROL,
+    0x0
+  };
+  if(nau7802_readreg(i2c, buf[0], "I2C_CONTROL", &buf[1])){
+    return -1;
+  }
+  if(enabled){ // disabled is 1
+    buf[1] &= 0x01; // clear 0x01 BGPCP
+  }else{
+    buf[1] |= 0x01; // set 0x01 BGPCP
+  }
+  if(nau7802_xmit(i2c, buf, sizeof(buf))){
+    return -1;
+  }
+  ESP_LOGI(TAG, "set bandgap chopper bit");
+  // shouldn't need to calibrate here
+  return 0;
+}
+
 int nau7802_set_pga_cap(i2c_master_dev_handle_t i2c, bool enabled){
   uint8_t buf[] = {
     NAU7802_PGA_PWR,

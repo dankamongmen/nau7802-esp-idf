@@ -1,3 +1,7 @@
+* 0.3.0 (2025-04-17)
+  * add `nau7802_set_bandgap_chop()` to enable and disable
+    the, you guessed it, bandgap chopper.
+
 * 0.2.2 (2025-03-30)
   * always enable internal LDO in `nau7802_enable_ldo()`,
     and always enable AVDD pin input in `nau7802_disable_ldo()`.
