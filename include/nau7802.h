@@ -86,6 +86,10 @@ int nau7802_read(i2c_master_dev_handle_t i2c, int32_t* val);
 // on success, val will hold some value less than scale.
 int nau7802_read_scaled(i2c_master_dev_handle_t i2c, float* val, uint32_t scale);
 
+// disable or enable thermometer read mode. while reading the thermometer, you
+// are not reading VIN. pass false to return to VIN read mode (the default).
+int nau7802_set_therm(i2c_master_dev_handle_t, bool enabled);
+
 // disable or enable the bandgap chopper. it is enabled by default.
 int nau7802_set_bandgap_chop(i2c_master_dev_handle_t i2c, bool enabled);
 

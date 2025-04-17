@@ -1,3 +1,7 @@
+* 0.3.1 (2025-04-17)
+  * add `nau7802_set_therm()` to enable and disable reading from the on-chip
+    temperature sensor (vs. VINx).
+
 * 0.3.0 (2025-04-17)
   * add `nau7802_set_bandgap_chop()` to enable and disable
     the, you guessed it, bandgap chopper.

@@ -202,6 +202,27 @@ int nau7802_poweron(i2c_master_dev_handle_t i2c){
   return 0;
 }
 
+int nau7802_set_therm(i2c_master_dev_handle_t, bool enabled){
+  uint8_t buf[] = {
+    NAU7802_I2C_CONTROL,
+    0x0
+  };
+  if(nau7802_readreg(i2c, buf[0], "I2C_CONTROL", &buf[1])){
+    return -1;
+  }
+  if(enabled){
+    buf[1] |= 0x02; // set 0x02 TS
+  }else{
+    buf[1] &= 0x02; // clear 0x02 TS
+  }
+  if(nau7802_xmit(i2c, buf, sizeof(buf))){
+    return -1;
+  }
+  ESP_LOGI(TAG, "set temperature sensor bit");
+  // shouldn't need to calibrate here
+  return 0;
+}
+
 int nau7802_set_bandgap_chop(i2c_master_dev_handle_t i2c, bool enabled){
   uint8_t buf[] = {
     NAU7802_I2C_CONTROL,
