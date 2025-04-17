@@ -202,7 +202,7 @@ int nau7802_poweron(i2c_master_dev_handle_t i2c){
   return 0;
 }
 
-int nau7802_set_therm(i2c_master_dev_handle_t, bool enabled){
+int nau7802_set_therm(i2c_master_dev_handle_t i2c, bool enabled){
   uint8_t buf[] = {
     NAU7802_I2C_CONTROL,
     0x0
