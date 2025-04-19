@@ -1,3 +1,6 @@
+* 0.3.3 (2025-04-19)
+  * `nau7802_set_gain()` now accepts a gain of 0 to disable the PGA.
+
 * 0.3.1 (2025-04-17)
   * add `nau7802_set_therm()` to enable and disable reading from the on-chip
     temperature sensor (vs. VINx).

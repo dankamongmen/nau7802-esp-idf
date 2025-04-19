@@ -24,9 +24,9 @@ int nau7802_reset(i2c_master_dev_handle_t i2c);
 //
 int nau7802_poweron(i2c_master_dev_handle_t i2c);
 
-// set the gain (default 1). can be any power of 2 from 1 to 128.
-// confirms the set and returns 0 on success, non-zero on failure.
-// triggers an internal calibration.
+// set the gain (default 1). can be any power of 2 from 1 to 128, or 0 for
+// PGA bypass mode. confirms the set and returns 0 on success, non-zero on
+// failure. triggers an internal calibration.
 int nau7802_setgain(i2c_master_dev_handle_t i2c, unsigned gain);
 
 // the NAU7802 ought receive on DVDD the same power source as that used
