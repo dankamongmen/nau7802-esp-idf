@@ -230,7 +230,7 @@ int nau7802_set_therm(i2c_master_dev_handle_t i2c, bool enabled){
   if(enabled){
     buf[1] |= 0x02; // set 0x02 TS
   }else{
-    buf[1] &= 0x02; // clear 0x02 TS
+    buf[1] &= 0xfd; // clear 0x02 TS
   }
   if(nau7802_xmit(i2c, buf, sizeof(buf))){
     return -1;
@@ -325,7 +325,8 @@ int nau7802_set_gain(i2c_master_dev_handle_t i2c, unsigned gain){
   if(nau7802_ctrl1(i2c, &buf[1])){
     return -1;
   }
-  buf[1] = buf[1] & 0xf8;
+  buf[1] &= 0xf8;
+  ESP_LOGI(TAG, "read ctrl1 0x%02x", buf[1]);
   if(gain >= 16){
     buf[1] |= 0x4;
   }
@@ -335,6 +336,7 @@ int nau7802_set_gain(i2c_master_dev_handle_t i2c, unsigned gain){
   if(gain == 128 || gain == 32 || gain == 8 || gain == 2){
     buf[1] |= 0x1;
   }
+  ESP_LOGI(TAG, "writing ctrl1 with 0x%02x", buf[1]);
   esp_err_t e = i2c_master_transmit_receive(i2c, buf, 2, &rbuf, 1, TIMEOUT_MS);
   if(e != ESP_OK){
     ESP_LOGE(TAG, "error %s writing CTRL1", esp_err_to_name(e));
@@ -421,7 +423,7 @@ int nau7802_enable_ldo(i2c_master_dev_handle_t i2c, nau7802_ldo_level mode,
   }
   buf[1] = rbuf & 0xc7; // VLDO is bits 5, 4, and 3 (0x34)
   buf[1] |= mode << 3u;
-  ESP_LOGI(TAG, "requesting VLDO mode 0x%02x", (rbuf & 0xc7) | (mode << 3u));
+  ESP_LOGI(TAG, "requesting VLDO mode 0x%02x (0x%02x)", (rbuf & 0xc7) | (mode << 3u), buf[1]);
   esp_err_t e = i2c_master_transmit_receive(i2c, buf, 2, &rbuf, 1, TIMEOUT_MS);
   if(e != ESP_OK){
     ESP_LOGE(TAG, "error (%s) writing CTRL1", esp_err_to_name(e));
