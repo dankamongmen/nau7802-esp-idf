@@ -304,7 +304,7 @@ nau7802_set_pgabypass(i2c_master_dev_handle_t i2c, bool bypass){
   return 0;
 }
 
-int nau7802_setgain(i2c_master_dev_handle_t i2c, unsigned gain){
+int nau7802_set_gain(i2c_master_dev_handle_t i2c, unsigned gain){
   uint8_t rbuf;
   if(gain > 128 || (gain != 0 && (gain & (gain - 1)))){
     ESP_LOGE(TAG, "illegal gain value %u", gain);
