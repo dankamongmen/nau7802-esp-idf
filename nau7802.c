@@ -419,9 +419,9 @@ int nau7802_enable_ldo(i2c_master_dev_handle_t i2c, nau7802_ldo_level mode,
   if(nau7802_ctrl1(i2c, &rbuf)){
     return -1;
   }
-  buf[1] = rbuf & 0xc7; // VLDO is bits 5, 4, and 3
+  buf[1] = rbuf & 0xc7; // VLDO is bits 5, 4, and 3 (0x34)
   buf[1] |= mode << 3u;
-  ESP_LOGI(TAG, "requesting VLDO mode 0x%02x", (rbuf & 0xc7) << 3u);
+  ESP_LOGI(TAG, "requesting VLDO mode 0x%02x", (rbuf & 0xc7) | (mode << 3u));
   esp_err_t e = i2c_master_transmit_receive(i2c, buf, 2, &rbuf, 1, TIMEOUT_MS);
   if(e != ESP_OK){
     ESP_LOGE(TAG, "error (%s) writing CTRL1", esp_err_to_name(e));
