@@ -1,4 +1,4 @@
-version: "0.4.0"
+version: "0.5.0"
 description: "Driver for the NAU7802 24-bit ADC"
 url: https://github.com/dankamongmen/nau7802-esp-idf
 license: "Apache-2.0"
