@@ -1,3 +1,6 @@
+* 0.5.0 (2025-04-21)
+  * remove `nau7802_multisample()`, which was fundamentally unsound.
+
 * 0.4.0 (2025-04-21)
   * add `nau7802_multisample()` and `NAU7802_MULTISAMPLE_DEFAULT` constant
   * fix scaling factor in `nau7802_read_scaled()`. this function might get

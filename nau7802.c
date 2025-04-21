@@ -182,19 +182,18 @@ int nau7802_poweron(i2c_master_dev_handle_t i2c){
   if(nau7802_xmit(i2c, buf, sizeof(buf))){
     return -1;
   }
-  uint8_t rbuf;
   // the data sheet says we must allow up to 200 microseconds for the device
   // to power up. we'll allow it a full millisecond.
   vTaskDelay(pdMS_TO_TICKS(1));
-  if(nau7802_pu_ctrl(i2c, &rbuf)){
+  if(nau7802_pu_ctrl(i2c, &buf[1])){
     return -1;
   }
-  if(!(rbuf & NAU7802_PU_CTRL_PUR)){
+  if(!(buf[1] & NAU7802_PU_CTRL_PUR)){
     ESP_LOGE(TAG, "didn't see powered-on bit");
     return -1;
   }
   esp_err_t e;
-  buf[1] = rbuf | NAU7802_PU_CTRL_CS;
+  buf[1] |= NAU7802_PU_CTRL_CS;
   if(nau7802_xmit(i2c, buf, sizeof(buf))){
     return -1;
   }
@@ -207,18 +206,24 @@ int nau7802_poweron(i2c_master_dev_handle_t i2c){
     return -1;
   }
   buf[0] = NAU7802_DEVICE_REV;
-  e = i2c_master_transmit_receive(i2c, buf, 1, &rbuf, 1, TIMEOUT_MS);
+  e = i2c_master_transmit_receive(i2c, buf, 1, &buf[1], 1, TIMEOUT_MS);
   if(e != ESP_OK){
     ESP_LOGE(TAG, "error %d reading device revision code", e);
     return -1;
   }
-  ESP_LOGI(TAG, "device revision code: 0x0%x", rbuf & 0xf);
+  buf[1] &= 0xf;
+  if(buf[1] != 0xf){
+    ESP_LOGW(TAG, "unexpected revision id 0x%x", buf[1]);
+  }else{
+    ESP_LOGI(TAG, "device revision code: 0x%x", buf[1]);
+  }
   if(nau7802_internal_calibrate(i2c)){
     return -1;
   }
   return 0;
 }
 
+// FIXME also have to cut PGA <= 2
 int nau7802_set_therm(i2c_master_dev_handle_t i2c, bool enabled){
   uint8_t buf[] = {
     NAU7802_I2C_CONTROL,
@@ -249,9 +254,9 @@ int nau7802_set_bandgap_chop(i2c_master_dev_handle_t i2c, bool enabled){
     return -1;
   }
   if(enabled){ // disabled is 1
-    buf[1] &= 0x01; // clear 0x01 BGPCP
+    buf[1] &= NAU7802_PGA_CHPDIS; // clear 0x01 BGPCP
   }else{
-    buf[1] |= 0x01; // set 0x01 BGPCP
+    buf[1] |= NAU7802_PGA_CHPDIS; // set 0x01 BGPCP
   }
   if(nau7802_xmit(i2c, buf, sizeof(buf))){
     return -1;
@@ -266,7 +271,7 @@ int nau7802_set_pga_cap(i2c_master_dev_handle_t i2c, bool enabled){
     NAU7802_PGA_PWR,
     0x0
   };
-  if(nau7802_readreg(i2c, buf[0], "PWR_CTRL", &buf[1])){
+  if(nau7802_readreg(i2c, buf[0], "PGA_PWR", &buf[1])){
     return -1;
   }
   if(enabled){
@@ -480,15 +485,17 @@ nau7802_read_internal(i2c_master_dev_handle_t i2c, int32_t* val, bool lognodata)
   if((e = nau7802_readreg(i2c, NAU7802_ADCO_B0, "ADCO_B0", &r0)) != ESP_OK){
     return e;
   }
-  *val = (r2 << 16u) + (r1 << 8u) + r0;
-
-  // if the sign bit is set in the 24-bit output then
-  // propagate it to the 32-bit return value
+  // FIXME chop to noise_free_bits according to AVDD and PGA. we never have
+  // more than 20 noise free bits nor less than 16, so modifications are
+  // restricted to r0.
+  const int32_t mask = 0xf0;
+  *val = (r2 << 16u) + (r1 << 8u) + (r0 & mask);
+  // if the most significant bit of the 24-bit output is set, then propagate
+  // it to the 32-bit return value.
   if (*val & 0x800000) {
     *val |= 0xFF000000;
   }
-
-  ESP_LOGD(TAG, "ADC reads: %u %u %u full %lu", r0, r1, r2, *val);
+  ESP_LOGD(TAG, "ADC reads: %u %u %u full %lu 0x%08x", r0, r1, r2, *val, *val);
   return ESP_OK;
 }
 

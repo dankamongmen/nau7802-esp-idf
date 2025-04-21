@@ -94,17 +94,6 @@ int nau7802_read(i2c_master_dev_handle_t i2c, int32_t* val);
 // error. returns non-zero on error, in which case *val is undefined.
 int nau7802_read_scaled(i2c_master_dev_handle_t i2c, float* val, uint32_t scale);
 
-// read and average n samples. an error at any point will result in a non-zero
-// value being immediately returned, in which case *val is undefined.
-// otherwise, zero is returned, and *val contains the average. the division is
-// done once using the aggregated value, so there are very real concerns of
-// representation and even overflow with large n; it probably ought not be
-// more than 10, and 3 (NAU7802_MULTISAMPLE_DEFAULT) is recommended. this is a
-// blocking function, and will take time dependent on the sampling rate and n.
-#define NAU7802_MULTISAMPLE_DEFAULT 3
-esp_err_t nau7802_multisample(i2c_master_dev_handle_t i2c, float* val,
-                              unsigned n);
-
 // disable or enable thermometer read mode. while reading the thermometer, you
 // are not reading VIN. pass false to return to VIN read mode (the default).
 int nau7802_set_therm(i2c_master_dev_handle_t i2c, bool enabled);
