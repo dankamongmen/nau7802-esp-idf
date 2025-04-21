@@ -99,9 +99,9 @@ int nau7802_read_scaled(i2c_master_dev_handle_t i2c, float* val, uint32_t scale)
 // otherwise, zero is returned, and *val contains the average. the division is
 // done once using the aggregated value, so there are very real concerns of
 // representation and even overflow with large n; it probably ought not be
-// more than 10, and 5 (NAU7802_MULTISAMPLE_DEFAULT) is recommended. this is a
+// more than 10, and 3 (NAU7802_MULTISAMPLE_DEFAULT) is recommended. this is a
 // blocking function, and will take time dependent on the sampling rate and n.
-#define NAU7802_MULTISAMPLE_DEFAULT 5
+#define NAU7802_MULTISAMPLE_DEFAULT 3
 esp_err_t nau7802_multisample(i2c_master_dev_handle_t i2c, float* val,
                               unsigned n);
 
