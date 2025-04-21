@@ -3,6 +3,8 @@
 
 // ESP-IDF component for working with Nuvatron NAU7802 ADCs.
 
+// todo: add rate selection, channel selection
+
 #include <driver/i2c_master.h>
 
 // probe the I2C bus for an NAU7802. if it is found, configure i2cnau
@@ -18,15 +20,18 @@ int nau7802_reset(i2c_master_dev_handle_t i2c);
 // it would not be unwise to call nau7802_reset() first. afterwards, it might
 // be desirable to call one or more of:
 //
-//  nau7802_enable_ldo() if you wish to use the internal LDO instead
-//   of the value read on AVDD.
-//  nau7802_set_gain().
-//
+//  nau7802_enable_ldo() to use the internal LDO instead of the AVDD input pin.
+//  nau7802_set_gain() to make use of PGA values besides 1, or bypass the PGA.
+//  nau7802_set_pga_cap() if you have installed a capacitor between
+//   Vin2N and Vin2P (disabling the second channel).
+//  nau7802_set_bandgap_chop() to disable bandwidth chopping.
+//  nau7802_export_clock() to export the clock on DRDY instead of the data
+//   readiness signal.
 int nau7802_poweron(i2c_master_dev_handle_t i2c);
 
 // set the gain (default 1). can be any power of 2 from 1 to 128, or 0 for
 // PGA bypass mode. confirms the set and returns 0 on success, non-zero on
-// failure. triggers an internal calibration.
+// failure. triggers internal calibration.
 int nau7802_set_gain(i2c_master_dev_handle_t i2c, unsigned gain);
 
 // the NAU7802 ought receive on DVDD the same power source as that used
@@ -59,25 +64,25 @@ typedef enum {
   NAU7802_LDO_24V = 7,
 } nau7802_ldo_level;
 
-// enable the internal LDO, and ignore the value on the AVDD pin. the
-// level must be at least 0.3V less than DVDD (this function sadly
-// cannot verify that you've selected a valid level, because we don't
-// know DVDD). pga_ldomode refers to the LDOMODE bit (0x40) in PGA. by default,
-// a capacitor with subohm ESR ought be used, for higher DC gain / improved
-// accuracy. instead, a capacitor with less than 5Ω ESR can be used, with
-// improved stability / lower DC gain. indicate the second case with this
-// function. triggers an internal calibration.
+// enable the internal LDO, and ignore the value on the AVDD pin. the level
+// must be at least 0.3V less than DVDD (this function sadly cannot verify
+// that you've selected a valid level--we don't know DVDD). pga_ldomode refers
+// to the LDOMODE bit (0x40) in PGA. by default, a capacitor with subohm ESR
+// ought be used, for higher DC gain / improved accuracy. instead, a capacitor
+// with less than 5Ω ESR can be used, with improved stability / lower DC gain.
+// indicate the second case with this function. triggers internal calibration.
 int nau7802_enable_ldo(i2c_master_dev_handle_t i2c, nau7802_ldo_level level,
                        bool pga_ldomode);
 
 // manage PGA_CAP_EN bit (0x80) in PWR_CTRL. in single-channel applications,
 // a capacitor can connect Vin2P and Vin2N for greater ENOB (the capacitance
 // is a function of AVDD; 330pF is recommended for 3.3V). if such a capacitor
-// is present, enable it with this function. triggers an internal calibration.
+// is present, enable it with this function. triggers internal calibration.
 int nau7802_set_pga_cap(i2c_master_dev_handle_t i2c, bool enabled);
 
-// read the 24-bit ADC into val. returns non-zero on error, in which case
-// *val is undefined. this is the raw ADC value.
+// read the 24-bit ADC into val. this is a nonblocking function; if data is
+// not yet ready, it returns immediately with error. returns non-zero on error,
+// in which case *val is undefined. this is the raw ADC value.
 int nau7802_read(i2c_master_dev_handle_t i2c, int32_t* val);
 
 // read the 24-bit ADC, interpreting it using some maximum value scale.
