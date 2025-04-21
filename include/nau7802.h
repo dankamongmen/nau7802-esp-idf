@@ -5,6 +5,7 @@
 
 // todo: add rate selection, channel selection
 
+#include <esp_err.h>
 #include <driver/i2c_master.h>
 
 // probe the I2C bus for an NAU7802. if it is found, configure i2cnau
@@ -85,11 +86,24 @@ int nau7802_set_pga_cap(i2c_master_dev_handle_t i2c, bool enabled);
 // in which case *val is undefined. this is the raw ADC value.
 int nau7802_read(i2c_master_dev_handle_t i2c, int32_t* val);
 
-// read the 24-bit ADC, interpreting it using some maximum value scale.
-// i.e. if scale is 5000 (representing e.g. a small bar load cell of 5kg),
-// the raw ADC value will be divided by 3355.4432 (1 << 24 / 5000).
-// on success, val will hold some value less than scale.
+// read the 24-bit ADC, interpreting it using some maximum value scale. i.e. if
+// scale is 5000000 (representing e.g. a small bar load cell capable of 5kg, in
+// mg increments), the raw ADC value will be divided by 1677.7216 (1 << 23 /
+// 5000000). on success, val will hold some value less than scale. this is a
+// nonblocking function; if data is not yet ready, it returns immediately with
+// error. returns non-zero on error, in which case *val is undefined.
 int nau7802_read_scaled(i2c_master_dev_handle_t i2c, float* val, uint32_t scale);
+
+// read and average n samples. an error at any point will result in a non-zero
+// value being immediately returned, in which case *val is undefined.
+// otherwise, zero is returned, and *val contains the average. the division is
+// done once using the aggregated value, so there are very real concerns of
+// representation and even overflow with large n; it probably ought not be
+// more than 10, and 5 (NAU7802_MULTISAMPLE_DEFAULT) is recommended. this is a
+// blocking function, and will take time dependent on the sampling rate and n.
+#define NAU7802_MULTISAMPLE_DEFAULT 5
+esp_err_t nau7802_multisample(i2c_master_dev_handle_t i2c, float* val,
+                              unsigned n);
 
 // disable or enable thermometer read mode. while reading the thermometer, you
 // are not reading VIN. pass false to return to VIN read mode (the default).

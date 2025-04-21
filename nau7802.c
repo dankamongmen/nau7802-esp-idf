@@ -106,35 +106,35 @@ int nau7802_reset(i2c_master_dev_handle_t i2c){
 }
 
 // get the single byte of some register
-static inline int
+static inline esp_err_t
 nau7802_readreg(i2c_master_dev_handle_t i2c, registers reg,
                 const char* regname, uint8_t* val){
   uint8_t r = reg;
   esp_err_t e;
   if((e = i2c_master_transmit_receive(i2c, &r, 1, val, 1, TIMEOUT_MS)) != ESP_OK){
     ESP_LOGE(TAG, "error (%s) requesting %s via I2C", esp_err_to_name(e), regname);
-    return -1;
+    return e;
   }
   ESP_LOGD(TAG, "got %s: 0x%02x", regname, *val);
-  return 0;
+  return ESP_OK;
 }
 
-static inline int
+static inline esp_err_t
 nau7802_pu_ctrl(i2c_master_dev_handle_t i2c, uint8_t* val){
   return nau7802_readreg(i2c, NAU7802_PU_CTRL, "PU_CTRL", val);
 }
 
-static inline int
+static inline esp_err_t
 nau7802_ctrl1(i2c_master_dev_handle_t i2c, uint8_t* val){
   return nau7802_readreg(i2c, NAU7802_CTRL1, "CTRL1", val);
 }
 
-static inline int
+static inline esp_err_t
 nau7802_ctrl2(i2c_master_dev_handle_t i2c, uint8_t* val){
   return nau7802_readreg(i2c, NAU7802_CTRL2, "CTRL2", val);
 }
 
-static inline int
+static inline esp_err_t
 nau7802_pga(i2c_master_dev_handle_t i2c, uint8_t* val){
   return nau7802_readreg(i2c, NAU7802_PGA, "PGA", val);
 }
@@ -451,31 +451,34 @@ int nau7802_read_scaled(i2c_master_dev_handle_t i2c, float* val, uint32_t scale)
   if(nau7802_read(i2c, &v)){
     return -1;
   }
-  const float ADCMAX = 1u << 24u; // can be represented perfectly in 32-bit float
+  const float ADCMAX = 1u << 23u; // can be represented perfectly in 32-bit float
   const float adcper = ADCMAX / scale;
   *val = v / adcper;
   ESP_LOGD(TAG, "converted raw %lu to %f", v, *val);
   return 0;
 }
 
-int nau7802_read(i2c_master_dev_handle_t i2c, int32_t* val){
+static esp_err_t
+nau7802_read_internal(i2c_master_dev_handle_t i2c, int32_t* val, bool lognodata){
   uint8_t r0, r1, r2;
-  if(nau7802_pu_ctrl(i2c, &r0)){
-    return -1;
+  esp_err_t e;
+  if((e = nau7802_pu_ctrl(i2c, &r0)) != ESP_OK){
+    return e;
   }
   if(!(r0 & NAU7802_PU_CTRL_CR)){
-    ESP_LOGE(TAG, "data not yet ready at ADC (0x%02x)", r0);
-    // FIXME retry?
-    return -1;
+    if(lognodata){
+      ESP_LOGE(TAG, "data not yet ready at ADC (0x%02x)", r0);
+    }
+    return ESP_ERR_NOT_FINISHED;
   }
-  if(nau7802_readreg(i2c, NAU7802_ADCO_B2, "ADCO_B2", &r2)){
-    return -1;
+  if((e = nau7802_readreg(i2c, NAU7802_ADCO_B2, "ADCO_B2", &r2)) != ESP_OK){
+    return e;
   }
-  if(nau7802_readreg(i2c, NAU7802_ADCO_B1, "ADCO_B1", &r1)){
-    return -1;
+  if((e = nau7802_readreg(i2c, NAU7802_ADCO_B1, "ADCO_B1", &r1)) != ESP_OK){
+    return e;
   }
-  if(nau7802_readreg(i2c, NAU7802_ADCO_B0, "ADCO_B0", &r0)){
-    return -1;
+  if((e = nau7802_readreg(i2c, NAU7802_ADCO_B0, "ADCO_B0", &r0)) != ESP_OK){
+    return e;
   }
   *val = (r2 << 16u) + (r1 << 8u) + r0;
 
@@ -486,7 +489,30 @@ int nau7802_read(i2c_master_dev_handle_t i2c, int32_t* val){
   }
 
   ESP_LOGD(TAG, "ADC reads: %u %u %u full %lu", r0, r1, r2, *val);
-  return 0;
+  return ESP_OK;
+}
+
+int nau7802_read(i2c_master_dev_handle_t i2c, int32_t* val){
+  return nau7802_read_internal(i2c, val, true);
+}
+
+esp_err_t nau7802_multisample(i2c_master_dev_handle_t i2c, float* val, unsigned n){
+  float sum = 0;
+  for(unsigned z = 0 ; z < n ; ++z){
+    int32_t v;
+    esp_err_t e;
+    do{
+      e = nau7802_read_internal(i2c, &v, false);
+      if(e != ESP_OK && e != ESP_ERR_NOT_FINISHED){
+        return e;
+      }
+    }while(e != ESP_OK);
+    // accumulating into this 32-bit float can result in inaccurate maths if we
+    // go beyond 1 << 24u
+    sum += v;
+  }
+  *val = sum / n;
+  return ESP_OK;
 }
 
 int nau7802_set_deepsleep(i2c_master_dev_handle_t i2c, bool powerdown){

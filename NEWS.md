@@ -1,3 +1,8 @@
+* 0.4.0 (2025-04-21)
+  * add `nau7802_multisample()` and `NAU7802_MULTISAMPLE_DEFAULT` constant
+  * fix scaling factor in `nau7802_read_scaled()`. this function might get
+    removed in the future.
+
 * 0.3.3 (2025-04-19)
   * renamed `nau7802_setgain()` to `nau7802_set_gain()` to match everything
     else. `nau7802_set_gain()` now accepts a gain of 0 to disable the PGA.
