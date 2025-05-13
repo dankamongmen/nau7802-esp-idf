@@ -4,4 +4,4 @@ url: https://github.com/dankamongmen/nau7802-esp-idf
 license: "Apache-2.0"
 dependencies:
   idf:
-    version: ">=5.0"
+    version: ">=5.2"
