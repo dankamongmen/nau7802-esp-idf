@@ -1,3 +1,6 @@
+* not yet released
+  * Dep on ESP-IDF 5.2+ (necessary for modern I2C)
+
 * 0.5.0 (2025-04-21)
   * remove `nau7802_multisample()`, which was fundamentally unsound.
 
