@@ -3,7 +3,7 @@
 
 // ESP-IDF component for working with Nuvatron NAU7802 ADCs.
 
-// todo: add rate selection, channel selection
+// todo: add channel selection
 
 #include <esp_err.h>
 #include <driver/i2c_master.h>
@@ -34,6 +34,15 @@ int nau7802_poweron(i2c_master_dev_handle_t i2c);
 // PGA bypass mode. confirms the set and returns 0 on success, non-zero on
 // failure. triggers internal calibration.
 int nau7802_set_gain(i2c_master_dev_handle_t i2c, unsigned gain);
+
+// set the sample rate of the NAU7802. 
+// the rate is one of the following:
+// 10 samples per second (default)
+// 20 samples per second
+// 40 samples per second
+// 80 samples per second
+// 320 samples per second
+int nau7802_set_sample_rate(i2c_master_dev_handle_t i2c, unsigned rate);
 
 // the NAU7802 ought receive on DVDD the same power source as that used
 // by the host MCU (so long as it's not over 5.5V). AVDD can either

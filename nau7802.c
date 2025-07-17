@@ -358,6 +358,49 @@ int nau7802_set_gain(i2c_master_dev_handle_t i2c, unsigned gain){
   return 0;
 }
 
+int nau7802_set_sample_rate(i2c_master_dev_handle_t i2c, unsigned rate){
+  uint8_t rbuf;
+  if(rate != 10 && rate != 20 && rate != 40 && rate != 80 && rate != 320){
+    ESP_LOGE(TAG, "illegal rate value %u", rate);
+    return -1;
+  }
+  uint8_t buf[] = {
+    NAU7802_CTRL2,
+    0xff
+  };
+
+  if(nau7802_ctrl2(i2c, &buf[1])){
+    return -1;
+  }
+  buf[1] &= 0x10001111;
+  if(rate == 10){
+    buf[1] |= 0b000 << 4;
+  } else if(rate == 20){
+    buf[1] |= 0b001 << 4;
+  } else if(rate == 40){
+    buf[1] |= 0b010 << 4;
+  } else if(rate == 80){
+    buf[1] |= 0b011 << 4;
+  } else if(rate == 320){
+    buf[1] |= 0b111 << 4;
+  }
+  ESP_LOGI(TAG, "writing ctrl2 with 0x%02x", buf[1]);
+  esp_err_t e = i2c_master_transmit_receive(i2c, buf, 2, &rbuf, 1, TIMEOUT_MS);
+  if(e != ESP_OK){
+    ESP_LOGE(TAG, "error %s writing CTRL2", esp_err_to_name(e));
+    return -1;
+  }
+  if(rbuf != buf[1]){
+    ESP_LOGE(TAG, "CTRL2 reply 0x%02x didn't match 0x%02x", rbuf, buf[1]);
+    return -1;
+  }
+  ESP_LOGI(TAG, "set rate");
+  if (nau7802_internal_calibrate(i2c)){
+    return -1;
+  }
+  return 0;
+}
+
 // set the PGA LDOMODE (*not* the master AVDDS/LDO switch)
 static int
 nau7802_set_pgaldomode(i2c_master_dev_handle_t i2c, bool ldomode){
