@@ -375,13 +375,13 @@ int nau7802_set_sample_rate(i2c_master_dev_handle_t i2c, unsigned rate){
   buf[1] &= 0x10001111;
   if(rate == 10){
     buf[1] |= 0b000 << 4;
-  } else if(rate == 20){
+  }else if(rate == 20){
     buf[1] |= 0b001 << 4;
-  } else if(rate == 40){
+  }else if(rate == 40){
     buf[1] |= 0b010 << 4;
-  } else if(rate == 80){
+  }else if(rate == 80){
     buf[1] |= 0b011 << 4;
-  } else if(rate == 320){
+  }else if(rate == 320){
     buf[1] |= 0b111 << 4;
   }
   ESP_LOGI(TAG, "writing ctrl2 with 0x%02x", buf[1]);
@@ -395,7 +395,7 @@ int nau7802_set_sample_rate(i2c_master_dev_handle_t i2c, unsigned rate){
     return -1;
   }
   ESP_LOGI(TAG, "set rate");
-  if (nau7802_internal_calibrate(i2c)){
+  if(nau7802_internal_calibrate(i2c)){
     return -1;
   }
   return 0;
