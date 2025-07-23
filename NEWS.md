@@ -1,5 +1,7 @@
-* not yet released
+* 0.6.0 (2025-07-23)
   * Dep on ESP-IDF 5.2+ (necessary for modern I2C)
+  * Add `nau7802_set_sample_rate()` by gabrielcsiz, which hopefully
+    won't run into the kind of problems `nau7802_multisample()` did.
 
 * 0.5.0 (2025-04-21)
   * remove `nau7802_multisample()`, which was fundamentally unsound.
