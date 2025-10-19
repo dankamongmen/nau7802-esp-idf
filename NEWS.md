@@ -1,3 +1,6 @@
+* 0.6.1 (2025-10-19)
+  * No user-visible changes
+
 * 0.6.0 (2025-07-23)
   * Dep on ESP-IDF 5.2+ (necessary for modern I2C)
   * Add `nau7802_set_sample_rate()` by gabrielcsiz, which hopefully
